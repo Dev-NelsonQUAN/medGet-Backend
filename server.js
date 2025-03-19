@@ -8,9 +8,9 @@ const morgan = require("morgan");
 const database = require("./config/database");
 const userRoute = require("./routes/userRoutes");
 
-app.use(cors())
+app.use(cors());
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 
 app.use(morgan("dev"));
 database();
@@ -22,7 +22,7 @@ app.all("/", (req, res) => {
 });
 
 app.all("*", (req, res) => {
-  return res.status(404).json({ message: "Are you lost? Route doesn't exist" });
+  return res.status(500).json({ message: "Are you lost? Route doesn't exist" });
 });
 
 app.listen(port, () => {
