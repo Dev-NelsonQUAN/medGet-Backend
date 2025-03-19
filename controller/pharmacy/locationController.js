@@ -1,4 +1,4 @@
-const locationModel = require('../../model/common/location');  
+const locationModel = require('../../model/common/locationModel');  
 const pharmacyModel = require('../../model/pharmacies/pharmacyModel');
 
 
@@ -11,13 +11,13 @@ exports.createLocation = async (req, res) => {
         return res.status(400).json({ message: "Pharmacy already has a location." });
       }
   
-      const { name, address, city, state, postalCode, country, phoneNumber, email, services } = req.body;
+      const { name, address, LocalGovernmentArea, state, postalCode, country, phoneNumber, email, services } = req.body;
   
       const newLocation = new locationModel({
         pharmacy: pharmacyId,
         name,
         address,
-        city,
+        LocalGovernmentArea,
         state,
         postalCode,
         country,

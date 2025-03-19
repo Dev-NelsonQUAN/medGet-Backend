@@ -5,7 +5,7 @@ const { cloudinary } = require("../../config/cloudinaryConfig");
 exports.createProfile = async (req, res) => {
   try {
     const pharmacyId = req.pharmacy.id;
-    const { phone, address, description, openingHours, dateOfbirth, age } = req.body;
+    const { phone,  bio, gender, dateOfbirth, age } = req.body;
 
     const existingProfile = await profileModel.findOne({
       pharmacy: pharmacyId,
@@ -24,9 +24,8 @@ exports.createProfile = async (req, res) => {
     const newProfile = new profileModel({
       pharmacy: pharmacyId,
       phone,
-      address,
-      description,
-      openingHours,
+      gender,
+      bio,
       dateOfbirth,
       age,
       image: imageUrl,
@@ -66,12 +65,11 @@ exports.updateProfile = async (req, res) => {
 
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
-    const { phone, address, description, openingHours, dateOfbirth, age } = req.body;
+    const { phone, gender, bio,  dateOfbirth, age } = req.body;
 
     if (phone) profile.phone = phone;
-    if (address) profile.address = address;
-    if (description) profile.description = description;
-    if (openingHours) profile.openingHours = openingHours;
+    if (bio) bio.address = bio;
+    if (gender) profile.gender = gender;
     if (dateOfbirth) profile.dateOfbirth = dateOfbirth;
     if (age) profile.age = age
 
