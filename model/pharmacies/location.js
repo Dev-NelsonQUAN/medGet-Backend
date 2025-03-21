@@ -13,8 +13,7 @@ const locationSchema = new mongoose.Schema({
   postalCode: String,
   country: String,
   phoneNumber: String,
-  email: String,
-  services: [String]
+  email: String
 });
 
 module.exports = mongoose.model('Location', locationSchema);

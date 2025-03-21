@@ -1,46 +1,56 @@
 const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
-const bcrypt = require("bcryptjs");
+const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
+require("dotenv/config.js")
 const crypto = require("crypto");
-const sendEmail = require("../../utils/email");
+const { sendverificationEmail } = require("../../service/mail");
+
+
+const handleError = async (res, error) => {
+  return res.status(500).json({
+    message: "An error occurred",
+    error: error.message || error,
+  });
+};
 
 exports.registerPharmacy = async (req, res) => {
   try {
     const { pharmacyName, email, password } = req.body;
 
-    const existing = await pharmacyModel.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    const checkIfEmailExists = await pharmacyModel.findOne({ email });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (checkIfEmailExists) {
+      return res.status(409).json({ message: "Email already exists" });
+    }
+
+    const hashPassword = await argon2.hash(password);
     const verifiedToken = crypto.randomBytes(20).toString("hex");
+    const verifiedTokenExpires = Date.now() + 3600000;
 
-    const pharmacy = new pharmacyModel({
+    const createUser = await pharmacyModel.create({
       pharmacyName,
       email,
-      password: hashedPassword,
+      password: hashPassword,
       verifiedToken,
-      verifiedTokenExpires: Date.now() + 3600000, 
+      verifiedTokenExpires,
     });
 
-    await pharmacy.save();
+    await sendverificationEmail(email, verifiedToken);
+    await createUser.save()
 
-    const verifyLink = `http://localhost:5000/api/pharmacies/verify/${verifiedToken}`;
-    await sendEmail(
-      email,
-      "Verify Your Pharmacy Account",
-      `<a href="${verifyLink}">Click to verify</a>`
-    );
-
-    res
-      .status(201)
-      .json({ message: "Pharmacy registered. Please check your email to verify.", data: pharmacy });
+    return res
+      .status(200)
+      .json({ message: "Pharmacy  created successfully", data: createUser });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    handleError(res, err);
   }
 };
+ 
 
-exports.verifyEmail = async (req, res) => {
+// Example: /verify-pharmacy/:token
+exports.verifyPharmacy = async (req, res) => {
   try {
+    // Grab token from URL params, not query
     const { token } = req.params;
 
     const pharmacy = await pharmacyModel.findOne({
@@ -48,19 +58,55 @@ exports.verifyEmail = async (req, res) => {
       verifiedTokenExpires: { $gt: Date.now() },
     });
 
-    if (!pharmacy)
+    if (!pharmacy) {
       return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
     pharmacy.verified = true;
     pharmacy.verifiedToken = undefined;
     pharmacy.verifiedTokenExpires = undefined;
+
     await pharmacy.save();
 
-    res.json({ msg: "Email verified successfully!"});
+    return res.status(200).json({ message: "Email verified successfully" });
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    res.status(500).json({ message: "An error occurred", error: err.message });
   }
 };
+
+
+
+exports.resendVerificationEmail = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const pharmacy = await pharmacyModel.findOne({ email });
+
+    if (!pharmacy) {
+      return res.status(404).json({ message: "pharmacy  not found" });
+    }
+
+    if (pharmacy.verified) {
+      return res.status(400).json({ message: "pharmacy  already verified" });
+    }
+
+    const verifiedToken = crypto.randomBytes(20).toString("hex");
+    const verifiedTokenExpires = Date.now() + 3600000;
+
+    pharmacy.verifiedToken = verifiedToken;
+    pharmacy.verifiedTokenExpires = verifiedTokenExpires;
+    await user.save();
+
+    await sendverificationEmail(email, verifiedToken);
+
+    return res
+      .status(200)
+      .json({ message: "Verification email resent successfully" });
+  } catch (err) {
+    handleError(res, err);
+  }
+};
+
 
 exports.loginPharmacy = async (req, res) => {
   try {
@@ -69,148 +115,152 @@ exports.loginPharmacy = async (req, res) => {
     const pharmacy = await pharmacyModel.findOne({ email });
     if (!pharmacy) return res.status(400).json({ msg: "Invalid credentials" });
 
-    if (!pharmacy.verified)
-      return res.status(400).json({ msg: "Please verify your email" });
+    const comparePassword = await argon2.verify(pharmacy.password, password);
 
-    const isMatch = await bcrypt.compare(password, pharmacy.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!comparePassword) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
 
-    const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
+    const token = jwt.sign({ userId: pharmacy.id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION_TIME || "1h",
     });
 
-    res.json({ token });
+    return res
+      .status(200)
+      .json({ message: "Login successful", data: findUser, token: token });
   } catch (err) {
-    res.status(500).json({ msg: err.message });
+    return res
+    .status(500)
+    .json({ message: "An error occured", error: err.message, err });
   }
 };
 
-exports.requestPasswordReset = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const pharmacy = await pharmacyModel.findOne({ email });
+// exports.requestPasswordReset = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     const pharmacy = await pharmacyModel.findOne({ email });
 
-    if (!pharmacy) {
-      return res
-        .status(400)
-        .json({ msg: "Pharmacy with this email does not exist." });
-    }
+//     if (!pharmacy) {
+//       return res
+//         .status(400)
+//         .json({ msg: "Pharmacy with this email does not exist." });
+//     }
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetPasswordToken = jwt.sign(
-      { resetToken },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+//     const resetToken = crypto.randomBytes(20).toString("hex");
+//     const resetPasswordToken = jwt.sign(
+//       { resetToken },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1h" }
+//     );
 
-    pharmacy.resetPasswordToken = resetPasswordToken;
-    pharmacy.resetPasswordExpires = Date.now() + 3600000; 
-    await pharmacy.save();
+//     pharmacy.resetPasswordToken = resetPasswordToken;
+//     pharmacy.resetPasswordExpires = Date.now() + 3600000; 
+//     await pharmacy.save();
 
-    const resetLink = `http://localhost:5000/api/pharmacies/resetpassword/${resetPasswordToken}`;
-    const emailContent = `
-        <h3>Password Reset Request</h3>
-        <p>Please click the link below to reset your password:</p>
-        <a href="${resetLink}">${resetLink}</a>
-        <p>This link will expire in 1 hour.</p>
-      `;
+//     const resetLink = `http://localhost:5000/api/pharmacies/resetpassword/${resetPasswordToken}`;
+//     const emailContent = `
+//         <h3>Password Reset Request</h3>
+//         <p>Please click the link below to reset your password:</p>
+//         <a href="${resetLink}">${resetLink}</a>
+//         <p>This link will expire in 1 hour.</p>
+//       `;
 
-    await sendEmail(pharmacy.email, "Password Reset", emailContent);
+//     await sendEmail(pharmacy.email, "Password Reset", emailContent);
 
-    res.status(200).json({ msg: "Password reset link sent to your email." });
-  } catch (err) {
-    res.status(500).json({ msg: err.message });
-  }
-};
-
-
-exports.resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { newPassword } = req.body;
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const pharmacy = await pharmacyModel.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() },
-    });
-
-    if (!pharmacy) {
-      return res.status(400).json({ message: "Invalid or expired reset token." });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    pharmacy.password = hashedPassword;
-    pharmacy.resetPasswordToken = undefined;
-    pharmacy.resetPasswordExpires = undefined;
-    await pharmacy.save();
-
-    res.status(200).json({ message: "Password has been reset successfully." });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.status(200).json({ msg: "Password reset link sent to your email." });
+//   } catch (err) {
+//     res.status(500).json({ msg: err.message });
+//   }
+// };
 
 
-exports.getAllPharmacies = async (req, res) => {
-  try {
-    const pharmacies = await pharmacyModel.find()
-      .populate("profile")
-      .populate("location");
-    res.status(200).json(pharmacies);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+// exports.resetPassword = async (req, res) => {
+//   try {
+//     const { token } = req.params;
+//     const { newPassword } = req.body;
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const pharmacy = await pharmacyModel.findOne({
+//       resetPasswordToken: token,
+//       resetPasswordExpires: { $gt: Date.now() },
+//     });
+
+//     if (!pharmacy) {
+//       return res.status(400).json({ message: "Invalid or expired reset token." });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(newPassword, 10);
+//     pharmacy.password = hashedPassword;
+//     pharmacy.resetPasswordToken = undefined;
+//     pharmacy.resetPasswordExpires = undefined;
+//     await pharmacy.save();
+
+//     res.status(200).json({ message: "Password has been reset successfully." });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 
-exports.getPharmacyById = async (req, res) => {
-  try {
-    const pharmacy = await pharmacyModel.findById(req.params.id)
-      .populate("profile")
-      .populate("location");
-
-    if (!pharmacy) {
-      return res.status(404).json({ message: "Pharmacy not found." });
-    }
-
-    res.status(200).json(pharmacy);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+// exports.getAllPharmacies = async (req, res) => {
+//   try {
+//     const pharmacies = await pharmacyModel.find()
+//       .populate("profile")
+//       .populate("location");
+//     res.status(200).json(pharmacies);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 
-exports.updatePharmacy = async (req, res) => {
-  try {
-    const { pharmacyName, email } = req.body;
-    const pharmacy = await pharmacyModel.findById(req.params.id);
+// exports.getPharmacyById = async (req, res) => {
+//   try {
+//     const pharmacy = await pharmacyModel.findById(req.params.id)
+//       .populate("profile")
+//       .populate("location");
 
-    if (!pharmacy) {
-      return res.status(404).json({ message: "Pharmacy not found." });
-    }
+//     if (!pharmacy) {
+//       return res.status(404).json({ message: "Pharmacy not found." });
+//     }
 
-    if (pharmacyName) pharmacy.pharmacyName = pharmacyName;
-    if (email) pharmacy.email = email;
+//     res.status(200).json(pharmacy);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
-    await pharmacy.save();
-    res.status(200).json({ message: "Pharmacy updated successfully.", data: pharmacy });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
 
-// Delete Pharmacy
-exports.deletePharmacy = async (req, res) => {
-  try {
-    const pharmacy = await pharmacyModel.findByIdAndDelete(req.params.id);
+// exports.updatePharmacy = async (req, res) => {
+//   try {
+//     const { pharmacyName, email } = req.body;
+//     const pharmacy = await pharmacyModel.findById(req.params.id);
 
-    if (!pharmacy) {
-      return res.status(404).json({ msg: "Pharmacy not found." });
-    }
+//     if (!pharmacy) {
+//       return res.status(404).json({ message: "Pharmacy not found." });
+//     }
+
+//     if (pharmacyName) pharmacy.pharmacyName = pharmacyName;
+//     if (email) pharmacy.email = email;
+
+//     await pharmacy.save();
+//     res.status(200).json({ message: "Pharmacy updated successfully.", data: pharmacy });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+// // Delete Pharmacy
+// exports.deletePharmacy = async (req, res) => {
+//   try {
+//     const pharmacy = await pharmacyModel.findByIdAndDelete(req.params.id);
+
+//     if (!pharmacy) {
+//       return res.status(404).json({ msg: "Pharmacy not found." });
+//     }
  
-    res.status(200).json({ message: "Pharmacy deleted successfully.", data: pharmacy });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.status(200).json({ message: "Pharmacy deleted successfully.", data: pharmacy });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };

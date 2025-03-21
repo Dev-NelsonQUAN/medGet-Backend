@@ -9,8 +9,8 @@ const {
   // getBaseUrl,
 } = require("../controller/user/userController");
 const { verifyToken } = require("../middleware/middleware");
-const { upload } = require("../config/cloudinary");
-const { addOrUpdateProfile } = require("../controller/profile/profileController");
+// const { upload } = require("../config/cloudinary");
+// const { addOrUpdateProfile } = require("../controller/profile/profileController");
 
 const userRoute = express.Router();
 
@@ -19,7 +19,7 @@ userRoute.post("/createuser", createUser);
 userRoute.get("/verify", verifyUser);
 userRoute.post("/resend-verification-email", resendVerificationEmail);
 userRoute.post("/login", loginUser);
-userRoute.post("/profile", verifyToken, upload.single("profileImage"), addOrUpdateProfile);
+// userRoute.post("/profile", verifyToken, upload.single("profileImage"), addOrUpdateProfile);
 // userRoute.get("/getOneUser ", getUser ById);
 // userRoute.get('/test', getBaseUrl);
 
