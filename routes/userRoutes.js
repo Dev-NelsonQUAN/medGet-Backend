@@ -21,8 +21,8 @@ userRoute.post("/resend-verification-email", resendVerificationEmail);
 userRoute.post("/login", loginUser);
 userRoute.post("/createProfile", verifyToken, upload.single("profileImage"), createProfile);
 userRoute.get("/getProfile", verifyToken, getProfile);
-// userRoute.get("/getProfile", verifyToken, get.single("profileImage"), getProfile);
 userRoute.post("/updateProfile", verifyToken, updateProfile);
+
 // userRoute.get("/getOneUser ", getUser ById);
 // userRoute.get('/test', getBaseUrl);
 
