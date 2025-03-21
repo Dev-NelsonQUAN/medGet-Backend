@@ -6,10 +6,8 @@ const profileSchema = new Schema({
   phoneNo: { type: String },
   gender: { type: String, enum: ["male", "female"] },
   bio: { type: String },
-  profilePicture: {
-    type: Schema.Types.ObjectId,
-    ref: "files",
-  },
+  profilePictureUrl: { type: String },
+  profilePicturePublicId: { type: String },
   userId: {
     type: Schema.Types.ObjectId,
     ref: "users",

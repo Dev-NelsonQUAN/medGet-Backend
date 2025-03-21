@@ -1,4 +1,4 @@
-const locationModel = require('../../model/common/locationModel');  
+const locationModel = require('../../model/pharmacies/location');  
 const pharmacyModel = require('../../model/pharmacies/pharmacyModel');
 
 
