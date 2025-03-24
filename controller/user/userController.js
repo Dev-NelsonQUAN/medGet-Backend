@@ -4,6 +4,8 @@ const crypto = require("crypto");
 require("dotenv/config");
 const { sendverificationEmail } = require("../../service/mail");
 const jwt = require("jsonwebtoken");
+const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
+const { getAllPharmacies } = require("../pharmacy/pharmacyController");
 // const profileModel = require("../../model/users/profileModel");
 
 const handleError = async (res, error) => {
@@ -156,7 +158,9 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({ message: "User gotten successfully", data: findMe });
+    return res
+      .status(200)
+      .json({ message: "User gotten successfully", data: findMe });
   } catch (err) {
     handleError(res, err.message);
   }
@@ -172,6 +176,24 @@ exports.deleteOneUser = async (req, res) => {
     }
 
     return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    handleError(res, err.message);
+  }
+};
+
+exports.getAllPharmacies = async (req, res) => {
+  try {
+    const getPharmacies = await pharmacyModel
+      .find()
+      .populate("profile")
+      .populate("location");
+
+    return res
+      .status(200)
+      .json({
+        message: "All pharmacies gotten successfully",
+        data: getPharmacies,
+      });
   } catch (err) {
     handleError(res, err.message);
   }
