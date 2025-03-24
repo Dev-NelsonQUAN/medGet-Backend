@@ -36,6 +36,7 @@ exports.createUser = async (req, res) => {
     });
 
     await sendverificationEmail(email, verifiedToken);
+    await createUser.save()
 
     return res
       .status(200)
