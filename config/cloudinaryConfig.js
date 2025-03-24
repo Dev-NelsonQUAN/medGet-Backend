@@ -22,7 +22,6 @@ const storage = new CloudinaryStorage({
       transformation: [{ width: 500, height: 500, crop: "limit" }],
       public_id: `${file.fieldname}-${Date.now()}`
     }
-
   },
 });
 

@@ -11,15 +11,23 @@ const transporter = nodemailer.createTransport({
     pass: process.env.GMAIL_PASS,
   },
   debug: true,
-  logger: true
+  logger: true,
 });
 
-const sendverificationEmail = async (email, token) => {
+const sendverificationEmail = async (email, token, type) => {
   //   const frontendUrl = process.env.FRONTEND_URL;
 
-  //   const verificationUrl = `${frontendUrl}/verify/${token}`;
+  let verificationUrl = "";
 
-  const verificationUrl = `http://localhost:5173/#/verify/${token}`;
+  if (type === "user") {
+    verificationUrl = `http://localhost:5173/verify/${token}`;
+  } else if (type === "pharmacy") {
+    verificationUrl = `http://localhost:5173/pharm-verify/${token}`;
+  } else {
+    console.error( "Invalid email verification type", type);
+    return;
+  }
+
   // const verificationUrl = `https://med-get-global.vercel.app/#/verify/${token}`;
 
   const mailOptions = {

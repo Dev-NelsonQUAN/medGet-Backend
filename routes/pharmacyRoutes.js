@@ -15,7 +15,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const pharmacyRoutes = express.Router();
 
 pharmacyRoutes.post('/register', registerPharmacy);
-pharmacyRoutes.get('/verify/:token', verifyEmail);
+pharmacyRoutes.get('/pharm-verify', verifyEmail);
 pharmacyRoutes.post('/login', loginPharmacy);
 pharmacyRoutes.post('/request-password-reset', requestPasswordReset);
 pharmacyRoutes.post('/resetpassword/:token', resetPassword);

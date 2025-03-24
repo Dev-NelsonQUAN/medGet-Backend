@@ -1,48 +1,53 @@
 const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
-const bcrypt = require("bcryptjs");
+// const bcrypt = require("bcryptjs");
+const argon2 = require("argon2");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sendEmail = require("../../utils/email");
+const { sendverificationEmail } = require("../../service/mail");
 
 exports.registerPharmacy = async (req, res) => {
   try {
     const { pharmacyName, email, password } = req.body;
 
     const existing = await pharmacyModel.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    if (existing)
+      return res.status(400).json({ message: "Email already in use" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await argon2.hash(password, 10);
     const verifiedToken = crypto.randomBytes(20).toString("hex");
+    const verifiedTokenExpires = Date.now() + 36000000;
 
     const pharmacy = new pharmacyModel({
       pharmacyName,
       email,
       password: hashedPassword,
       verifiedToken,
-      verifiedTokenExpires: Date.now() + 3600000, 
+      verifiedTokenExpires,
     });
 
+    await sendverificationEmail(email, verifiedToken, "pharmacy");
     await pharmacy.save();
 
-    const verifyLink = `http://localhost:5000/api/pharmacies/verify/${verifiedToken}`;
-    await sendEmail(
-      email,
-      "Verify Your Pharmacy Account",
-      `<a href="${verifyLink}">Click to verify</a>`
-    );
+    // const verifyLink = `http://localhost:7399/api/pharmacies/verify/${verifiedToken}`;
+    // await sendEmail(
+    //   email,
+    //   "Verify Your Pharmacy Account",
+    //   `<a href="${verifyLink}">Click to verify</a>`
+    // );
 
-    res
-      .status(201)
-      .json({ message: "Pharmacy registered. Please check your email to verify.", data: pharmacy });
+    res.status(201).json({
+      message: "Pharmacy registered. Please check your email to verify.",
+      data: pharmacy,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
 exports.verifyEmail = async (req, res) => {
+  const { token } = req.query;
   try {
-    const { token } = req.params;
-
     const pharmacy = await pharmacyModel.findOne({
       verifiedToken: token,
       verifiedTokenExpires: { $gt: Date.now() },
@@ -54,9 +59,10 @@ exports.verifyEmail = async (req, res) => {
     pharmacy.verified = true;
     pharmacy.verifiedToken = undefined;
     pharmacy.verifiedTokenExpires = undefined;
+
     await pharmacy.save();
 
-    res.json({ msg: "Email verified successfully!"});
+    res.json({ msg: "Email verified successfully!" });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -72,7 +78,7 @@ exports.loginPharmacy = async (req, res) => {
     if (!pharmacy.verified)
       return res.status(400).json({ msg: "Please verify your email" });
 
-    const isMatch = await bcrypt.compare(password, pharmacy.password);
+    const isMatch = await argon2.verify(pharmacy.password, password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
     const token = jwt.sign({ id: pharmacy._id }, process.env.JWT_SECRET, {
@@ -104,7 +110,7 @@ exports.requestPasswordReset = async (req, res) => {
     );
 
     pharmacy.resetPasswordToken = resetPasswordToken;
-    pharmacy.resetPasswordExpires = Date.now() + 3600000; 
+    pharmacy.resetPasswordExpires = Date.now() + 3600000;
     await pharmacy.save();
 
     const resetLink = `http://localhost:5000/api/pharmacies/resetpassword/${resetPasswordToken}`;
@@ -123,7 +129,6 @@ exports.requestPasswordReset = async (req, res) => {
   }
 };
 
-
 exports.resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -136,7 +141,9 @@ exports.resetPassword = async (req, res) => {
     });
 
     if (!pharmacy) {
-      return res.status(400).json({ message: "Invalid or expired reset token." });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token." });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -151,10 +158,10 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
 exports.getAllPharmacies = async (req, res) => {
   try {
-    const pharmacies = await pharmacyModel.find()
+    const pharmacies = await pharmacyModel
+      .find()
       .populate("profile")
       .populate("location");
     res.status(200).json(pharmacies);
@@ -163,10 +170,10 @@ exports.getAllPharmacies = async (req, res) => {
   }
 };
 
-
 exports.getPharmacyById = async (req, res) => {
   try {
-    const pharmacy = await pharmacyModel.findById(req.params.id)
+    const pharmacy = await pharmacyModel
+      .findById(req.params.id)
       .populate("profile")
       .populate("location");
 
@@ -179,7 +186,6 @@ exports.getPharmacyById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 exports.updatePharmacy = async (req, res) => {
   try {
@@ -194,7 +200,9 @@ exports.updatePharmacy = async (req, res) => {
     if (email) pharmacy.email = email;
 
     await pharmacy.save();
-    res.status(200).json({ message: "Pharmacy updated successfully.", data: pharmacy });
+    res
+      .status(200)
+      .json({ message: "Pharmacy updated successfully.", data: pharmacy });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -208,9 +216,27 @@ exports.deletePharmacy = async (req, res) => {
     if (!pharmacy) {
       return res.status(404).json({ msg: "Pharmacy not found." });
     }
- 
-    res.status(200).json({ message: "Pharmacy deleted successfully.", data: pharmacy });
+
+    res
+      .status(200)
+      .json({ message: "Pharmacy deleted successfully.", data: pharmacy });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getMe = async (req, res) => {
+  try {
+    const findMe = await pharmacyModel.findById(req.user.id);
+
+    if (!findOne) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "User gotten successfully", data: findMe });
+  } catch (err) {
+    handleError(res, err.message);
   }
 };

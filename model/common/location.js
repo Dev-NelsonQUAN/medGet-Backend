@@ -14,7 +14,9 @@ const locationSchema = new mongoose.Schema({
   country: String,
   phoneNumber: String,
   email: String,
-  services: [String]
+  services: [String],
+  latitude: Number,
+  longitude: Number
 });
 
 module.exports = mongoose.model('Location', locationSchema);
