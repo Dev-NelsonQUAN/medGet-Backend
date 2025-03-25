@@ -123,7 +123,7 @@ exports.loginPharmacy = async (req, res) => {
       .status(500)
       .json({ message: "An error occured", error: err.message, err });
   }
-};
+};                                                  
 
 exports.requestPasswordReset = async (req, res) => {
   try {

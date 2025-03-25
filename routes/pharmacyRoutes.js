@@ -7,13 +7,12 @@ const {
   verifyEmail,
   // requestPasswordReset,
   // resetPassword,
-  getAllPharmacies,
-  getPharmacyById,
-  updatePharmacy,
-  deletePharmacy,
-  resetPassword,
+  // getAllPharmacies,
+  // getPharmacyById,
+  // updatePharmacy,
+  // deletePharmacy,
 } = require('../controller/pharmacy/pharmacyController');
-const authMiddleware = require('../middleware/authMiddleware');
+// const authMiddleware = require('../middleware/authMiddleware');
 
 const pharmacyRoutes = express.Router();
 
