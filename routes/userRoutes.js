@@ -18,6 +18,5 @@ userRoute.post("/resend-verification-email", resendVerificationEmail);
 userRoute.post("/login", loginUser);
 userRoute.get("/getMe", getMe);
 userRoute.get("/getAllPharms", getAllPharmacies)
-// userRoute.delete("/deleteUser", deleteOneUser);
 
 module.exports = userRoute;

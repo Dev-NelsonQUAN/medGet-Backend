@@ -1,23 +1,26 @@
 const express = require('express');
 const {
   registerPharmacy,
-  verifyEmail,
+  verifyPharmacy,
   loginPharmacy,
-  requestPasswordReset,
-  resetPassword,
-  getAllPharmacies,
-  getPharmacyById,
-  updatePharmacy,
-  deletePharmacy,
+  resendVerificationEmail,
+  verifyEmail,
+  // requestPasswordReset,
+  // resetPassword,
+  // getAllPharmacies,
+  // getPharmacyById,
+  // updatePharmacy,
+  // deletePharmacy,
 } = require('../controller/pharmacy/pharmacyController');
-const authMiddleware = require('../middleware/authMiddleware');
+// const authMiddleware = require('../middleware/authMiddleware');
 
 const pharmacyRoutes = express.Router();
 
 pharmacyRoutes.post('/register', registerPharmacy);
 pharmacyRoutes.get('/pharm-verify', verifyEmail);
+pharmacyRoutes.get('/verify/:token', verifyPharmacy);
 pharmacyRoutes.post('/login', loginPharmacy);
-pharmacyRoutes.post('/request-password-reset', requestPasswordReset);
+pharmacyRoutes.post('/resend-verification-email', resendVerificationEmail);
 pharmacyRoutes.post('/resetpassword/:token', resetPassword);
 
 // Protected routes
