@@ -2,9 +2,12 @@ const userModel = require("../../model/users/userModel");
 const argon2 = require("argon2");
 const crypto = require("crypto");
 require("dotenv/config");
-const { sendverificationEmail } = require("../../service/mail");
+// const { sendverificationEmail } = require("../../service/mail");
+const sendverificationEmail = require("../../service/mail")
 const jwt = require("jsonwebtoken");
-const profileModel = require("../../model/users/profileModel");
+const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
+const { getAllPharmacies } = require("../pharmacy/pharmacyController");
+// const profileModel = require("../../model/users/profileModel");
 
 const handleError = async (res, error) => {
   return res.status(500).json({
@@ -35,8 +38,8 @@ exports.createUser = async (req, res) => {
       verifiedTokenExpires,
     });
 
-    await sendverificationEmail(email, verifiedToken);
-    await createUser.save()
+    await sendverificationEmail(email, verifiedToken, "user");
+    await createUser.save();
 
     return res
       .status(200)
@@ -91,7 +94,7 @@ exports.resendVerificationEmail = async (req, res) => {
     user.verifiedTokenExpires = verifiedTokenExpires;
     await user.save();
 
-    await sendverificationEmail(email, verifiedToken);
+    await sendverificationEmail(email, verifiedToken, "user");
 
     return res
       .status(200)
@@ -132,5 +135,67 @@ exports.loginUser = async (req, res) => {
     return res
       .status(500)
       .json({ message: "An error occured", error: err.message, err });
+  }
+};
+
+// exports.getAll = async (req, res) => {
+//   try {
+//     const getAllUsers = await userModel.find();
+
+//     return res
+//       .status(200)
+//       .json({ message: "All user gotten successfully", data: getAllUsers });
+//   } catch (err) {
+//     handleError(res, err.message);
+//   }
+// };
+
+exports.getMe = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const findMe = await userModel.findById(userId);
+
+    if (!findOne) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "User gotten successfully", data: findMe });
+  } catch (err) {
+    handleError(res, err.message);
+  }
+};
+
+exports.deleteOneUser = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const deleteUser = await userModel.findByIdAndDelete(userId);
+
+    if (!deleteUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    handleError(res, err.message);
+  }
+};
+
+exports.getAllPharmacies = async (req, res) => {
+  try {
+    const getPharmacies = await pharmacyModel
+      .find()
+      .populate("profile")
+      .populate("location");
+
+    return res
+      .status(200)
+      .json({
+        message: "All pharmacies gotten successfully",
+        data: getPharmacies,
+      });
+  } catch (err) {
+    handleError(res, err.message);
   }
 };

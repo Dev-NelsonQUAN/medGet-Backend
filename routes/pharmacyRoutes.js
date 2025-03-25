@@ -4,6 +4,7 @@ const {
   verifyPharmacy,
   loginPharmacy,
   resendVerificationEmail,
+  verifyEmail,
   // requestPasswordReset,
   // resetPassword,
   // getAllPharmacies,
@@ -16,10 +17,11 @@ const {
 const pharmacyRoutes = express.Router();
 
 pharmacyRoutes.post('/register', registerPharmacy);
-pharmacyRoutes.get('/verify/:token', verifyPharmacy);
+pharmacyRoutes.get('/pharm-verify', verifyEmail);
+// pharmacyRoutes.get('/verify/:token', verifyPharmacy);
 pharmacyRoutes.post('/login', loginPharmacy);
 pharmacyRoutes.post('/resend-verification-email', resendVerificationEmail);
-// pharmacyRoutes.post('/resetpassword/:token', resetPassword);
+pharmacyRoutes.post('/resetpassword/:token', resetPassword);
 
 // Protected routes
 // pharmacyRoutes.get('/getallpharmacy', authMiddleware, getAllPharmacies);

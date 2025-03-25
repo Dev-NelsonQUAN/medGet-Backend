@@ -89,3 +89,33 @@ exports.deleteLocation = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.getAllPharmacies = async (req, res) => {
+  try {
+      const pharmacies = await locationModel.find({});
+      res.status(200).json(pharmacies);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getNearbyPharmacies = async (req, res) => {
+  const { latitude, longitude } = req.query;
+
+  if (!latitude || !longitude) {
+      return res.status(400).json({ message: 'Latitude and longitude are required.' });
+  }
+
+  try {
+      const radius = 10; // 10 kilometers radius, adjust as needed
+
+      const nearbyPharmacies = await locationModel.find({
+          latitude: { $gte: parseFloat(latitude) - (radius / 111.32), $lte: parseFloat(latitude) + (radius / 111.32) },
+          longitude: { $gte: parseFloat(longitude) - (radius / (111.32 * Math.cos(parseFloat(latitude) * Math.PI / 180))), $lte: parseFloat(longitude) + (radius / (111.32 * Math.cos(parseFloat(latitude) * Math.PI / 180))) },
+      });
+
+      res.status(200).json(nearbyPharmacies);
+  } catch (error) {
+      res.status(500).json({ message: error.message });
+  }
+};
