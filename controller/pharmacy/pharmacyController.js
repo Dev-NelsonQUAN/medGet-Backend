@@ -51,7 +51,7 @@ exports.registerPharmacy = async (req, res) => {
 exports.verifyPharmacy = async (req, res) => {
   try {
     // Grab token from URL params, not query
-    const { token } = req.params;
+    const { token } = req.query;
 
     const pharmacy = await pharmacyModel.findOne({
       verifiedToken: token,
@@ -121,7 +121,11 @@ exports.loginPharmacy = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
-    const token = jwt.sign({ userId: pharmacy.id }, process.env.JWT_SECRET, {
+    if (!pharmacy.verified) {
+      return res.status(400).json({ message: "Kindly verify your email" });
+    }
+
+    const token = jwt.sign({ pharmacyId: pharmacy.id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRATION_TIME || "1h",
     });
 
