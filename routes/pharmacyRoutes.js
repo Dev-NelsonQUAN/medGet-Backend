@@ -6,12 +6,12 @@ const {
   resendVerificationEmail,
   verifyEmail,
   // requestPasswordReset,
-  // resetPassword,
-  getAllPharmacies,
-  getPharmacyById,
-  updatePharmacy,
-  deletePharmacy,
   resetPassword,
+  // getAllPharmacies,
+  // getPharmacyById,
+  // updatePharmacy,
+  // deletePharmacy,
+  // resetPassword,
 } = require('../controller/pharmacy/pharmacyController');
 const authMiddleware = require('../middleware/authMiddleware');
 

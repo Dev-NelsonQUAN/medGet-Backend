@@ -89,7 +89,7 @@ exports.resendVerificationEmail = async (req, res) => {
 
     pharmacy.verifiedToken = verifiedToken;
     pharmacy.verifiedTokenExpires = verifiedTokenExpires;
-    await user.save();
+    await pharmacy.save();
 
     await sendverificationEmail(email, verifiedToken);
 
@@ -117,13 +117,13 @@ exports.loginPharmacy = async (req, res) => {
 
     return res
       .status(200)
-      .json({ message: "Login successful", data: findUser, token: token });
+      .json({ message: "Login successful", data: pharmacy, token: token });
   } catch (err) {
     return res
       .status(500)
       .json({ message: "An error occured", error: err.message, err });
   }
-};
+};                                                  
 
 exports.requestPasswordReset = async (req, res) => {
   try {
