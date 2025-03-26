@@ -1,48 +1,17 @@
 const userModel = require("../../model/users/userModel");
 const argon2 = require("argon2");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 require("dotenv/config");
+const { sendverificationEmail } = require("../../service/mail");
+const jwt = require("jsonwebtoken");
+const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
+const { getAllPharmacies } = require("../pharmacy/pharmacyController");
 
 const handleError = async (res, error) => {
-  return res
-    .status(500)
-    .json({ message: "An error occurred", error: error.message || error });
-};
-
-const sendverificationEmail = async (email, token) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
-    },
+  return res.status(500).json({
+    message: "An error occurred",
+    error: error.message || error,
   });
-
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? `http://med-get-global.vercel.app`  // Your production URL
-    : `http://localhost:7349`;
-
-  const verificationUrl = `${baseUrl}/verify?token=${token}`;
-
-  const mailOptions = {
-    from: `"MedGet, Your medical guy. <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: "Verify Your Email",
-    html: `
-       <div>
-        <p>Click the button below to verify your email:</p>
-        <a href="${verificationUrl}" style="text-decoration: none;">
-          <button style="background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 1rem;" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
-            Verify Email
-          </button>
-        </a>
-      </div>
-
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
 };
 
 exports.createUser = async (req, res) => {
@@ -51,22 +20,13 @@ exports.createUser = async (req, res) => {
 
     const checkIfEmailExists = await userModel.findOne({ email });
 
-    const hashPassword = await argon2.hash(password);
-
     if (checkIfEmailExists) {
       return res.status(409).json({ message: "Email already exists" });
     }
 
-    const generateToken = () => {
-      return crypto.randomBytes(20).toString("hex");
-    };
-
-    const generateExpirationTime = () => {
-      return Date.now() + 3600000;
-    };
-
-    const verifiedToken = generateToken();
-    const verifiedTokenExpires = generateExpirationTime();
+    const hashPassword = await argon2.hash(password);
+    const verifiedToken = crypto.randomBytes(20).toString("hex");
+    const verifiedTokenExpires = Date.now() + 3600000;
 
     const createUser = await userModel.create({
       fullname,
@@ -76,19 +36,19 @@ exports.createUser = async (req, res) => {
       verifiedTokenExpires,
     });
 
-    await sendverificationEmail(email, verifiedToken);
+    await sendverificationEmail(email, verifiedToken, "user");
+    await createUser.save();
 
     return res
       .status(200)
-      .json({ message: "User created successfully", data: createUser });
+      .json({ message: "User  created successfully", data: createUser });
   } catch (err) {
-    handleError(res, err.message);
+    handleError(res, err);
   }
 };
 
 exports.verifyUser = async (req, res) => {
   const { token } = req.query;
-
   try {
     const user = await userModel.findOne({
       verifiedToken: token,
@@ -105,9 +65,9 @@ exports.verifyUser = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({message: "Email verifies Successfully"})
+    return res.status(200).json({ message: "Email verified successfully" });
   } catch (err) {
-    handleError(res, err.message);
+    handleError(res, err);
   }
 };
 
@@ -118,54 +78,122 @@ exports.resendVerificationEmail = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User  not found" });
     }
 
     if (user.verified) {
-      return res.status(400).json({ message: "User already verified" });
+      return res.status(400).json({ message: "User  already verified" });
     }
 
-    const generateToken = () => {
-      return crypto.randomBytes(20).toString("hex");
-    };
-
-    const generateExpirationTime = () => {
-      return Date.now() + 3600000; 
-    };
-
-    const verifiedToken = generateToken();
-    const verifiedTokenExpires = generateExpirationTime();
+    const verifiedToken = crypto.randomBytes(20).toString("hex");
+    const verifiedTokenExpires = Date.now() + 3600000;
 
     user.verifiedToken = verifiedToken;
     user.verifiedTokenExpires = verifiedTokenExpires;
     await user.save();
 
-    await sendverificationEmail(email, verifiedToken);
+    await sendverificationEmail(email, verifiedToken, "user");
 
-    return res.status(200).json({ message: "Verification email resent successfully" });
+    return res
+      .status(200)
+      .json({ message: "Verification email resent successfully" });
+  } catch (err) {
+    handleError(res, err);
+  }
+};
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const findUser = await userModel.findOne({ email });
+
+    if (!findUser) {
+      return res.status(404).json({ message: "User  not found" });
+    }
+
+    const comparePassword = await argon2.verify(findUser.password, password);
+
+    if (!comparePassword) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+
+    if (!findUser.verified) {
+      return res.status(400).json({ message: "Kindly verify your email" });
+    }
+
+    const token = jwt.sign({ userId: findUser.id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION_TIME || "1h",
+    });
+
+    return res
+      .status(200)
+      .json({ message: "Login successful", data: findUser, token: token });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "An error occured", error: err.message, err });
+  }
+};
+
+// exports.getAll = async (req, res) => {
+//   try {
+//     const getAllUsers = await userModel.find();
+
+//     return res
+//       .status(200)
+//       .json({ message: "All user gotten successfully", data: getAllUsers });
+//   } catch (err) {
+//     handleError(res, err.message);
+//   }
+// };
+
+exports.getMe = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const findMe = await userModel.findById(userId);
+
+    if (!findOne) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "User gotten successfully", data: findMe });
   } catch (err) {
     handleError(res, err.message);
   }
 };
 
-exports.getUsers = async (req, res) => {
-  const getAllUsers = await userModel.find();
+exports.deleteOneUser = async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const deleteUser = await userModel.findByIdAndDelete(userId);
 
-  return res
-    .status(200)
-    .json({ message: "Gotten all user successfully", data: getAllUsers });
-};
+    if (!deleteUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-exports.getUserById = async (req, res) => {
-  const findOne = await userModel.findById(req.params.id);
-
-  if (!findOne) {
-    return res.status(404).json({ message: "User not found" });
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    handleError(res, err.message);
   }
-
-  return res
-    .status(200)
-    .json({ message: "User gotten successsfully", data: getUserById });
 };
 
-// exports.
+exports.getAllPharmacies = async (req, res) => {
+  try {
+    const getPharmacies = await pharmacyModel
+      .find()
+      .populate("profile")
+      .populate("location");
+
+    return res
+      .status(200)
+      .json({
+        message: "All pharmacies gotten successfully",
+        data: getPharmacies,
+      });
+  } catch (err) {
+    handleError(res, err.message);
+  }
+};
