@@ -31,7 +31,7 @@ const sendverificationEmail = async (email, token, type) => {
   // const verificationUrl = `https://med-get-global.vercel.app/#/verify/${token}`;
 
   const mailOptions = {
-    from: `"MedGet, Your medical guy. <${process.env.GMAIL_USER}>`,
+    from: `"MedGet, Your medical guy." <${process.env.GMAIL_USER}>`,
     to: email,
     subject: "Verify Your Email",
     html: `

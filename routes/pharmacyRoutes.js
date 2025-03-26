@@ -11,6 +11,7 @@ const {
   // getPharmacyById,
   // updatePharmacy,
   // deletePharmacy,
+  // resetPassword,
 } = require('../controller/pharmacy/pharmacyController');
 // const authMiddleware = require('../middleware/authMiddleware');
 
@@ -21,7 +22,7 @@ pharmacyRoutes.get('/pharm-verify', verifyEmail);
 // pharmacyRoutes.get('/verify/:token', verifyPharmacy);
 pharmacyRoutes.post('/login', loginPharmacy);
 pharmacyRoutes.post('/resend-verification-email', resendVerificationEmail);
-pharmacyRoutes.post('/resetpassword/:token', resetPassword);
+// pharmacyRoutes.post('/resetpassword/:token', resetPassword);
 
 // Protected routes
 // pharmacyRoutes.get('/getallpharmacy', authMiddleware, getAllPharmacies);

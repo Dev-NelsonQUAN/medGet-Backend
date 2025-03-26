@@ -2,12 +2,10 @@ const userModel = require("../../model/users/userModel");
 const argon2 = require("argon2");
 const crypto = require("crypto");
 require("dotenv/config");
-// const { sendverificationEmail } = require("../../service/mail");
-const sendverificationEmail = require("../../service/mail")
+const { sendverificationEmail } = require("../../service/mail");
 const jwt = require("jsonwebtoken");
 const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
 const { getAllPharmacies } = require("../pharmacy/pharmacyController");
-// const profileModel = require("../../model/users/profileModel");
 
 const handleError = async (res, error) => {
   return res.status(500).json({
