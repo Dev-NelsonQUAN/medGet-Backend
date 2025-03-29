@@ -1,14 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
-const {createLocation, getAllLocations, getLocationById, updateLocation, deleteLocation, getAllPharmacies, getNearbyPharmacies} = require('../controller/pharmacy/locationController');
+const { createLocation, getLocationById, updateLocation, getAllPharmacies } = require('../controller/pharmacy/locationController');
+
 
 router.post('/createlocation', authMiddleware, createLocation);
-router.get('/getlocation', authMiddleware, getAllLocations);
-router.get('/getlocationbyid/:id', authMiddleware, getLocationById);
-router.put('/updatelocationbyid/:id', authMiddleware, updateLocation);
-router.delete('/deletelocationbyid/:id', authMiddleware, deleteLocation);
+router.get('/getlocationbyid', authMiddleware, getLocationById);
+router.put('/updatelocation', authMiddleware, updateLocation);
 router.get('/pharmacies/all', getAllPharmacies);
-router.get('/pharmacies/nearby', getNearbyPharmacies); 
 
 module.exports = router;

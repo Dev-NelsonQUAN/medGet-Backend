@@ -12,7 +12,7 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const pharmacy = await Pharmacy.findById(decoded.id);
+    const pharmacy = await Pharmacy.findById(decoded.pharmacyId);
 
     if (!pharmacy) {
       return res.status(404).json({ msg: 'Pharmacy not found' });
@@ -26,3 +26,6 @@ const authMiddleware = async (req, res, next) => {
 };
 
 module.exports = authMiddleware;
+
+
+

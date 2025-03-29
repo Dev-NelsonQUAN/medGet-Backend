@@ -106,12 +106,22 @@ exports.loginPharmacy = async (req, res) => {
     const { email, password } = req.body;
 
     const pharmacy = await pharmacyModel.findOne({ email });
-    if (!pharmacy) return res.status(400).json({ msg: "Invalid credentials" });
+
+    if (!pharmacy){
+      return res.status(400).json({ message: "Pharmacy not found" });
+    }
 
     const isMatch = await argon2.verify(pharmacy.password, password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: pharmacy.id }, process.env.JWT_SECRET, {
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" })
+    };
+
+    if (!pharmacy.verified) {
+      return res.status(400).json({ message: "Kindly verify your email" });
+    }
+
+    const token = jwt.sign({ pharmacyId: pharmacy.id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRATION_TIME || "1h",
     });
 

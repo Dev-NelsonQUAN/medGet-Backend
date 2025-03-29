@@ -13,7 +13,7 @@ const storage = new CloudinaryStorage({
     let folder = "uploads"; 
 
     if (file.fieldname === "pharmacyProfiles") folder = "pharmacyProfiles";
-    if (file.fieldname === "medicine") folder = "medicine";
+    if (file.fieldname === "medicines") folder = "medicines";
     if (file.fieldname === "userPfofile") folder = "userPfofile";
 
     return{
