@@ -141,7 +141,7 @@ exports.getPharmacyById = async (req, res) => {
 
 exports.deleteOneUser = async (req, res) => {
   try {
-    const deleteUser = await userModel.findByIdAndUpdate(req.params.userId);
+    const deleteUser = await userModel.findByIdAndDelete(req.params.userId);
 
     if (!deleteUser) {
       return res.status(404).json({ message: "User not found" });
@@ -172,3 +172,18 @@ exports.deletePharmacy = async (req, res) => {
     handleError(res, err.message);
   }
 };
+
+exports.getMe = async (req, res) => {
+  try {
+    const findMe = await adminModel.findById(req.user.id)
+
+    if (findMe) {
+      return res.status(409).json({message: "Admin not found"})
+    }
+
+    return res.status(200).json({message: "Admin gotten successfully", data: findMe})
+  }
+  catch (err) {
+    handleError(re, err.message)
+  }
+}

@@ -1,65 +1,99 @@
 const UserModel = require("../../model/users/userModel");
 const { cloudinary } = require("../../config/cloudinaryConfig");
-const profileModel = require("../../model/users/profileModel");
+const profileModel = require("../../model/users/profileModel")
 
 exports.createProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { age, dateOfBirth, phoneNo, gender, bio } = req.body;
+    try {
+        console.log("req.file after Multer:", req.file); 
 
-    const existingProfile = await profileModel.findOne({ userId });
+        const userId = req.userId;
+        const { age, dateOfBirth, phoneNo, gender, bio } = req.body;
 
-    if (existingProfile) {
-      return res
-        .status(400)
-        .json({ message: "Profile already exist5s for this user" });
+        let imageUrl = "";
+        let publicId = "";
+
+        if (req.file) {
+            // Extract secure_url and public_id from req.file.filename
+            // The filename is the cloudinary url that is returned from cloudinary.
+            const cloudinaryUrl = req.file.path
+            imageUrl = cloudinaryUrl;
+            publicId = req.file.filename.split('/').pop().split('.')[0]; 
+        }
+
+        let profile = await profileModel.findOne({ userId });
+
+        if (profile) {
+            profile.age = age;
+            profile.dateOfBirth = dateOfBirth;
+            profile.phoneNo = phoneNo;
+            profile.gender = gender;
+            profile.bio = bio;
+            if (imageUrl) {
+                profile.profilePicture = imageUrl;
+                profile.profilePicturePublicId = publicId;
+            }
+
+            await profile.save();
+
+            // console.log("Profile Before Response:", profile);
+
+            return res.status(200).json({
+                message: "Profile updated successfully",
+                data: profile,
+            });
+        } else {
+            profile = new profileModel({
+                userId,
+                age,
+                dateOfBirth,
+                phoneNo,
+                gender,
+                bio,
+                profilePicture: imageUrl,
+                profilePicturePublicId: publicId,
+            });
+
+            await profile.save();
+
+            await UserModel.findByIdAndUpdate(userId, {
+                profile: profile._id,
+            });
+
+            console.log("Profile Before Response:", profile); 
+
+            return res.status(201).json({
+                message: "Profile created successfully",
+                data: profile,
+            });
+        }
+    } catch (err) {
+        console.error("Error creating/updating profile:", err);
+        return res.status(500).json({ message: "An error occurred", error: err.message });
     }
-
-    let imageUrl = "";
-    if (req.file) {
-      imageUrl = req.file.path;
-    }
-
-    const newProfile = new profileModel({
-      userId,
-      age,
-      dateOfBirth,
-      phoneNo,
-      gender,
-      bio,
-      profilePicture: profilePictureUrl,
-    });
-
-    await newProfile.save();
-
-    await UserModel.findByIdAndUpdate(userId, {
-      profile: newProfile._id,
-    });
-
-    return res
-      .status(201)
-      .json({ message: "Profile created successfully", data: profile });
-  } catch (err) {
-    return res.status(500).json({ message: "An error occurred", err });
-  }
 };
 
 exports.getProfile = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const profile = await profileModel
-      .findOne({ userId })
-      .populate("users", "fullname email");
+    const userId = req.userId; 
+    console.log("Decoded userId:", userId); 
+    const user = await UserModel.findById(userId, "fullname email profilePicture");
 
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({ message: "Profile gotten successfully" });
+    console.log(user); 
+
+    const profile = await profileModel.findOne({ userId });
+
+    return res.status(200).json({
+      message: "User profile retrieved successfully",
+      user,
+      profile, 
+    });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "An error occurred", error: err.message });
+    console.log(err);
+    return res.status(500).json({ message: "An error occurred", error: err.message });
   }
 };
 
