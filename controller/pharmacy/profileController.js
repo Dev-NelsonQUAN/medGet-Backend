@@ -4,16 +4,12 @@ const { cloudinary } = require("../../config/cloudinaryConfig");
 
 exports.createProfile = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacy.id;
-    const { phone, address, description, openingHours, dateOfbirth, age } = req.body;
+    const pharmacyId = req.pharmacy._id;
+    const { phone, email, pharmacyName, dateOfBirth, age, bio, gender } = req.body;
 
-    const existingProfile = await profileModel.findOne({
-      pharmacy: pharmacyId,
-    });
+    const existingProfile = await profileModel.findOne({ pharmacy: pharmacyId });
     if (existingProfile) {
-      return res
-        .status(400)
-        .json({ message: "Profile already exists for this pharmacy" });
+      return res.status(400).json({ message: "Profile already exists for this pharmacy" });
     }
 
     let imageUrl = "";
@@ -24,11 +20,12 @@ exports.createProfile = async (req, res) => {
     const newProfile = new profileModel({
       pharmacy: pharmacyId,
       phone,
-      address,
-      description,
-      openingHours,
-      dateOfbirth,
+      email,
+      pharmacyName,
+      dateOfBirth,
+      gender,
       age,
+      bio,
       image: imageUrl,
     });
 
@@ -38,9 +35,7 @@ exports.createProfile = async (req, res) => {
       profile: newProfile._id,
     });
 
-    res
-      .status(201)
-      .json({ message: "Profile created successfully", data: newProfile });
+    res.status(201).json({ message: "Profile created successfully", data: newProfile });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -48,8 +43,9 @@ exports.createProfile = async (req, res) => {
 
 exports.getProfile = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacy.id;
-    const profile = await profileModel.findOne({ pharmacy: pharmacyId }).populate("pharmacy", "pharmacyName email");
+    const pharmacyId = req.pharmacy._id;
+    const profile = await profileModel.findOne({ pharmacy: pharmacyId })
+      .populate("pharmacy", "pharmacyName email");
 
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
@@ -61,19 +57,20 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const pharmacyId = req.pharmacy.id;
+    const pharmacyId = req.pharmacy._id;
     const profile = await profileModel.findOne({ pharmacy: pharmacyId });
 
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
-    const { phone, address, description, openingHours, dateOfbirth, age } = req.body;
+    const { phone, email, bio, dateOfBirth, age, pharmacyName, gender } = req.body;
 
     if (phone) profile.phone = phone;
-    if (address) profile.address = address;
-    if (description) profile.description = description;
-    if (openingHours) profile.openingHours = openingHours;
-    if (dateOfbirth) profile.dateOfbirth = dateOfbirth;
-    if (age) profile.age = age
+    if (email) profile.email = email;
+    if (bio) profile.bio = bio;
+    if (dateOfBirth) profile.dateOfBirth = new Date(dateOfBirth);
+    if (age) profile.age = age;
+    if (gender) profile.gender = gender
+    if (pharmacyName) profile.pharmacyName = pharmacyName;
 
     if (req.file) {
       if (profile.image) {
@@ -84,20 +81,17 @@ exports.updateProfile = async (req, res) => {
     }
 
     await profile.save();
-    res
-      .status(200)
-      .json({ message: "Profile updated successfully", data: profile });
+    res.status(200).json({ message: "Profile updated successfully", data: profile });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+
 exports.deleteProfile = async (req, res) => {
   try {
     const pharmacyId = req.pharmacy.id;
-    const profile = await profileModel.findOneAndDelete({
-      pharmacy: pharmacyId,
-    });
+    const profile = await profileModel.findOneAndDelete({ pharmacy: pharmacyId });
 
     if (!profile) return res.status(404).json({ message: "Profile not found" });
 
