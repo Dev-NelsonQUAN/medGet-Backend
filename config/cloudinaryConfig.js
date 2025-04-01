@@ -7,6 +7,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// console.log("Cloudinary Config:", process.env.CLOUDINARY_CLOUD_NAME);
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async(req, file) =>  {
@@ -14,7 +16,7 @@ const storage = new CloudinaryStorage({
 
     if (file.fieldname === "pharmacyProfiles") folder = "pharmacyProfiles";
     if (file.fieldname === "medicine") folder = "medicine";
-    if (file.fieldname === "userPfofile") folder = "userPfofile";
+    if (file.fieldname === "profileImage") folder = "userProfile";
 
     return{
       folder,
