@@ -1,23 +1,23 @@
-  const { Schema, model } = require("mongoose");
+const { Schema, model } = require("mongoose");
 
-  const pharmacyProfileSchema = new Schema(
-    {
-      pharmacy: {
-        type: Schema.Types.ObjectId,
-        ref: "pharmacy",
-        required: true,
-        unique: true,
-      },
-      age: {type: Number},
-      phone: { type: String },
-      address: { type: String },
-      description: { type: String },
-      openingHours: { type: String },
-      dateOfbirth: {type: Date },
-      bio: {type: String},
-      image: { type: String },
+const pharmacyProfileSchema = new Schema(
+  {
+    pharmacy: {
+      type: Schema.Types.ObjectId,
+      ref: "pharmacy",
+      required: true,
+      unique: true,
     },
-    { timestamps: true }
-  );
+    age: { type: Number },
+    phone: { type: String },
+    email: { type: String },
+    pharmacyName: { type: String },
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ["male", "female", "others"] },
+    bio: { type: String },
+    image: { type: String },
+  },
+  { timestamps: true }
+);
 
-  module.exports = model("pharmacyProfiles", pharmacyProfileSchema);
+module.exports = model("pharmacyProfiles", pharmacyProfileSchema);

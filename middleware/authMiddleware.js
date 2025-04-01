@@ -21,6 +21,9 @@ const authMiddleware = async (req, res, next) => {
     req.pharmacy = pharmacy;
     next();
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ msg: "Token has expired" });
+    }
     return res.status(401).json({ msg: 'Token is not valid' });
   }
 };
