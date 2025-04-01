@@ -25,6 +25,7 @@ app.use("/api/user", userRoute);
 app.use("/api/pharmacies", pharmacyRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profile", userProfileRoutes);
+app.use("/api/pharmacy-profile", profileRoutes);
 app.use("/api/medicines", medicineRoutes);
 app.use("/api/locations", locationRoutes);
 
