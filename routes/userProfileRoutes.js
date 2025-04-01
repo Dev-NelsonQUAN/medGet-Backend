@@ -1,13 +1,16 @@
 const express =  require("express")
 const { verifyToken } = require("../middleware/middleware")
-const { createProfile, getProfile, updateProfile, deleteProfile } = require("../controller/user/profileController")
+const {  createOrUpdateProfile, getProfile, updateProfile, deleteProfile, createProfile,  } = require("../controller/user/profileController")
 const upload = require("../middleware/multerMiddlleware")
 
-const userProfileRoute = rRouter()
+const userProfileRoutes = express.Router()
 
-userProfileRoute.post("/createProfile", verifyToken, upload.single("profileImage") , createProfile)
-userProfileRoute.get("/getProfile", verifyToken, getProfile)
-userProfileRoute.patch("/updateProfile", verifyToken, updateProfile)
-userProfileRoute.delete("/deleteProfile", verifyToken, deleteProfile)
 
-module.exports = userProfileRoute 
+// userProfileRoutes.post("/createProfile", verifyToken, upload.single("profileImage") , createProfile)
+userProfileRoutes.post("/createProfile", verifyToken, upload.single("profileImage") , createProfile)
+userProfileRoutes.get("/getProfile", verifyToken, getProfile)
+// userProfileRoute.get("/getProfile", getProfile)
+userProfileRoutes.patch("/updateProfile", verifyToken, updateProfile)
+userProfileRoutes.delete("/deleteProfile", verifyToken, deleteProfile)
+
+module.exports = userProfileRoutes

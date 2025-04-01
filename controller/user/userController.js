@@ -5,8 +5,7 @@ require("dotenv/config");
 const { sendverificationEmail } = require("../../service/mail");
 const jwt = require("jsonwebtoken");
 const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
-const { getAllPharmacies } = require("../pharmacy/pharmacyController");
-
+                  
 const handleError = async (res, error) => {
   return res.status(500).json({
     message: "An error occurred",
@@ -78,11 +77,11 @@ exports.resendVerificationEmail = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: "User  not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     if (user.verified) {
-      return res.status(400).json({ message: "User  already verified" });
+      return res.status(400).json({ message: "User already verified" });
     }
 
     const verifiedToken = crypto.randomBytes(20).toString("hex");
@@ -109,7 +108,7 @@ exports.loginUser = async (req, res) => {
     const findUser = await userModel.findOne({ email });
 
     if (!findUser) {
-      return res.status(404).json({ message: "User  not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const comparePassword = await argon2.verify(findUser.password, password);
@@ -135,18 +134,6 @@ exports.loginUser = async (req, res) => {
       .json({ message: "An error occured", error: err.message, err });
   }
 };
-
-// exports.getAll = async (req, res) => {
-//   try {
-//     const getAllUsers = await userModel.find();
-
-//     return res
-//       .status(200)
-//       .json({ message: "All user gotten successfully", data: getAllUsers });
-//   } catch (err) {
-//     handleError(res, err.message);
-//   }
-// };
 
 exports.getMe = async (req, res) => {
   const userId = req.user.id;
