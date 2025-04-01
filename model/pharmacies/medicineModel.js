@@ -10,11 +10,10 @@ const medicineSchema = new Schema({
   category: { type: String },
   manufacturer: { type: String },
   price: { type: Number, required: true },
-  manufacturerPrice: { type: Number },
   stock: { type: Number, default: 0 },
   expireDate: { type: Date },
   status: { type: String, enum: ['Available', 'Out of Stock'], default: 'Available' },
   details: { type: String }
 }, { timestamps: true });
 
-module.exports = model("medicines", medicineSchema);
+module.exports =  Medicine = model("medicines", medicineSchema);
