@@ -5,6 +5,7 @@ require("dotenv/config");
 const { sendverificationEmail } = require("../../service/mail");
 const jwt = require("jsonwebtoken");
 const pharmacyModel = require("../../model/pharmacies/pharmacyModel");
+const medicineModel = require("../../model/pharmacies/medicineModel");
                   
 const handleError = async (res, error) => {
   return res.status(500).json({
@@ -184,3 +185,16 @@ exports.getAllPharmacies = async (req, res) => {
     handleError(res, err.message);
   }
 };
+
+exports.getAllMedicines = async (req, res) => {
+  try {
+    const getMedicines = await medicineModel.find()
+    .populate("profile")
+    .populate("location")
+
+    return res.status(200).json({message: "All medicines sgotten successfully", data: getMedicines})
+  }
+  catch (err) {
+    handleError(res, err.message)
+  }
+}
