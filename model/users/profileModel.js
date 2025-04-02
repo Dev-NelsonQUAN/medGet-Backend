@@ -5,7 +5,7 @@ const profileSchema = new Schema(
     age: { type: Number },
     dateOfBirth: { type: Date },
     phoneNo: { type: String },
-    gender: { type: String, enum: ["male", "female"] },
+    gender: { type: String, enum: ["Male", "Female"] },
     bio: { type: String },
     profilePicture: { type: String },
     profilePicturePublicId: { type: String },

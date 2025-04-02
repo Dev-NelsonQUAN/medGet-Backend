@@ -10,7 +10,7 @@ const userProfileRoutes = express.Router()
 userProfileRoutes.post("/createProfile", verifyToken, upload.single("profileImage") , createProfile)
 userProfileRoutes.get("/getProfile", verifyToken, getProfile)
 // userProfileRoute.get("/getProfile", getProfile)
-userProfileRoutes.patch("/updateProfile", verifyToken, updateProfile)
+// userProfileRoutes.patch("/updateProfile", verifyToken, updateProfile)
 userProfileRoutes.delete("/deleteProfile", verifyToken, deleteProfile)
 
 module.exports = userProfileRoutes

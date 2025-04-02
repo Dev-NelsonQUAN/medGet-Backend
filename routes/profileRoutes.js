@@ -6,7 +6,7 @@ const upload = require('../middleware/multerMiddlleware');
 
 profileRoutes.post('/createprofile', authMiddleware, upload.single('image'), createProfile);
 profileRoutes.get('/getprofile', authMiddleware, getProfile);
-profileRoutes.put('/updateprofile', authMiddleware, upload.single('image'), updateProfile);
+profileRoutes.patch('/updateprofile', authMiddleware, upload.single('image'), updateProfile);
 profileRoutes.delete('/deleteprofile', authMiddleware, deleteProfile);
 
 module.exports = profileRoutes;
